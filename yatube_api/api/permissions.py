@@ -6,7 +6,7 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
     Разрешает редактирование только автору поста,
     остальным пользователям доступ только на чтение.
     """
-    
+
     def has_permission(self, request, view):
         return (
             request.method in permissions.SAFE_METHODS
