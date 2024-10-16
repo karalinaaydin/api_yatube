@@ -19,6 +19,11 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = '__all__'
 
+    def create(self, validated_data):
+        # Автор берется из контекста запроса, переданного в сериализатор
+        request = self.context.get('request')
+        return Post.objects.create(author=request.user, **validated_data)
+
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
