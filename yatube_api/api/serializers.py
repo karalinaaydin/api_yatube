@@ -20,9 +20,13 @@ class PostSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        # Автор берется из контекста запроса, переданного в сериализатор
         request = self.context.get('request')
-        return Post.objects.create(author=request.user, **validated_data)
+        if request is None or not hasattr(request, 'user'):
+            raise serializers.ValidationError(
+                'Не удалось определить пользователя. '
+                'Пожалуйста, убедитесь, что запрос отправлен корректно.'
+            )
+        return super().create({**validated_data, 'author': request.user})
 
 
 class CommentSerializer(serializers.ModelSerializer):

@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from posts.models import Comment, Group, Post
+from posts.models import Group, Post
 from .permissions import IsAuthorOrReadOnly
 from .serializers import CommentSerializer, GroupSerializer, PostSerializer
 
@@ -12,7 +12,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
+    permission_classes = (IsAuthenticated, IsAuthorOrReadOnly,)
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
@@ -20,29 +20,25 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """ViewSet для модели Comment."""
 
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
+    permission_classes = (IsAuthenticated, IsAuthorOrReadOnly,)
+
+    def get_post(self):
+        """Возвращаем объект поста по параметру post_pk."""
+        return get_object_or_404(Post, id=self.kwargs.get('post_pk'))
 
     def get_queryset(self):
         """Фильтруем комментарии по post_id из URL."""
-        post_id = self.kwargs.get('post_pk')
-        return Comment.objects.filter(post_id=post_id)
+        post = self.get_post()
+        return post.comments.all()
 
     def perform_create(self, serializer):
         """Создаём комментарий, добавляя автора и пост."""
-        post = get_object_or_404(Post, id=self.kwargs.get('post_pk'))
+        post = self.get_post()
         serializer.save(author=self.request.user, post=post)
-
-    def update(self, request, *args, **kwargs):
-        """Обновление комментария (PUT или PATCH)."""
-        return super().update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        """Удаление комментария."""
-        return super().destroy(request, *args, **kwargs)
